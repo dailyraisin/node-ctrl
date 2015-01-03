@@ -9,7 +9,7 @@ PAUSE=5
 
 #functions
 usage() {
-	echo "usage: $ME {app.js} {port} {start|stop|restart}";
+	echo "usage: $ME {app.js} {port} {start|stop|restart} [--debug]";
 }
 
 echo_success() {
@@ -45,6 +45,10 @@ PORT=$2
 #action is start, stop, or restart
 ACTION=$3
 
+ME=`basename $1`
+THIS_PATH="`dirname \"$0\"`" # relative
+THIS_PATH="`( cd \"$THIS_PATH\" && pwd )`" #normalized
+
 # get optional --debug as fourth argument, if it’s set then $DO_DEBUG == true
 argc="$@ flubber"
 x=0
@@ -57,10 +61,6 @@ for arg in $argc
         esac
         x=$arg
 done
-
-ME=`basename $1`
-THIS_PATH="`dirname \"$0\"`" # relative
-THIS_PATH="`( cd \"$THIS_PATH\" && pwd )`" #normalized
 
 BOOTUP="color"
 RES_COL=60
