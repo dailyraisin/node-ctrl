@@ -35,12 +35,28 @@ echo_failure() {
 }
 
 
-#vars set on the input args
+
 #path to app.js
 SERVER=$1
 
 #http port to run app.js on
 PORT=$2
+
+#action is start, stop, or restart
+ACTION=$3
+
+# get optional --debug as fourth argument, if it’s set then $DO_DEBUG == true
+argc="$@ flubber"
+x=0
+# x=0 for unset variable
+for arg in $argc
+    do
+        case $x in
+            "--debug" )
+                DO_DEBUG=true;;
+        esac
+        x=$arg
+done
 
 ME=`basename $1`
 THIS_PATH="`dirname \"$0\"`" # relative
@@ -151,7 +167,7 @@ if [ $EXIT -ne 0 ]; then
 fi;
 
 # start, stop, restart actions
-case $3 in
+case $ACTION in
 start)
 	{
         #following echoes are logged
@@ -198,8 +214,16 @@ start)
     fi;
 
     echo "Starting";
+
     EXPR="$NODE $SERVER --port $PORT"
     (
+
+        if [ $DO_DEBUG ]; then
+            export DEBUG=*
+        else
+            export DEBUG=0
+        fi;
+
         #subshell so I can daemonize it
         exec >> $OUTPUT
         exec 2>&1
