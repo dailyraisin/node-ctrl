@@ -9,7 +9,7 @@ PAUSE=5
 
 #functions
 usage() {
-	echo "usage: $ME {app.js} {port} {start|stop|restart} [--debug]";
+	echo "usage: $ME {app.js} {port} {env} {start|stop|restart} [--debug]";
 }
 
 echo_success() {
@@ -39,11 +39,14 @@ echo_failure() {
 #path to app.js
 SERVER=$1
 
+#port
+PORT=$2
+
 #node environment
-ENV=$2
+ENV=$3
 
 #action is start, stop, or restart
-ACTION=$3
+ACTION=$4
 
 ME=`basename $1`
 THIS_PATH="`dirname \"$0\"`" # relative
@@ -73,14 +76,13 @@ SETCOLOR_NORMAL="echo -en \\033[0;39m"
 
 # set up logging locations
 # if tmp not available, log to this directory
-TMP_PID_FILE="/var/tmp/${ME}-${ENV}.pids"
+TMP_PID_FILE="/var/tmp/${ME}-${ENV}-${PORT}.pids"
 if [ -a "$TMP_PID_FILE" ]; then  #if exists
 	if [ ! -w "$TMP_PID_FILE" ]; then #if not writable
 		echo "Cannot write .pids to /var/tmp, !-w";
 		echo "Try it with sudo!";
         echo_failure;
 		exit 1;
-		#TMP_PID_FILE="$THIS_PATH/log/${ME}-${ENV}.pids"
 	fi;
 else #doesn't exist
 	if [ ! -w "/var/tmp/" ]; then #cannot write to directory
@@ -88,18 +90,16 @@ else #doesn't exist
 		echo "Try it with sudo!";
         echo_failure;
 		exit 1;
-		#TMP_PID_FILE="$THIS_PATH/log/${ME}-${ENV}.pids"
 	fi;
 fi;
 
-TMP_QUIT_FILE="/var/tmp/${ME}-${ENV}.quit"
+TMP_QUIT_FILE="/var/tmp/${ME}-${ENV}-${PORT}.quit"
 if [ -a "$TMP_QUIT_FILE" ]; then  #if exists
 	if [ ! -w "$TMP_QUIT_FILE" ]; then #if not writable
 		echo "Cannot possibly write .quit to /var/tmp, !-w";
 		echo "Try it with sudo!";
         echo_failure;
 		exit 1;
-		#TMP_QUIT_FILE="$THIS_PATH/${ME}-${ENV}.quit"
     else
         #remove it, it's not supposed to be there on startup!
         rm $TMP_QUIT_FILE;
@@ -110,20 +110,18 @@ else #doesn't exist
 		echo "Try it with sudo!";
         echo_failure;
 		exit 1;
-		#TMP_QUIT_FILE="$THIS_PATH/${ME}-${ENV}.quit"
 	fi;
     #doesn't exist and I can write to /var/tmp, cool, proceed! normal operation
 fi;
 
 
-OUTPUT="/var/tmp/${ME}-${ENV}.out"
+OUTPUT="/var/tmp/${ME}-${ENV}-${PORT}.out"
 if [ -a "$OUTPUT" ]; then  #if exists
 	if [ ! -w "$OUTPUT" ]; then #if not writable
 		echo "Cannot write .out to /var/tmp, !-w";
 		echo "Try it with sudo!";
         echo_failure;
 		exit 1;
-		#OUTPUT="$THIS_PATH/log/${ME}-${ENV}.out"
 	fi;
 fi;
 
@@ -164,7 +162,7 @@ start)
 	{
         #following echoes are logged
 		THIS_INSTANCE=$$
-		$PGREP -f "$SERVER -env=$ENV start" > $TMP_PID_FILE
+		$PGREP -f "$SERVER $PORT -env=$ENV start" > $TMP_PID_FILE
 
 		for POSSIBLE_PID in `cat $TMP_PID_FILE`; do
 			if [ "$THIS_INSTANCE" -ne "$POSSIBLE_PID" ] ; then #inner shell‘s id is not one found
@@ -201,7 +199,7 @@ start)
 
     echo "Starting";
 
-    EXPR="$NODE $SERVER -env=$ENV"
+    EXPR="$NODE $SERVER $PORT -env=$ENV"
     (
 
         if [ $DO_DEBUG ]; then
@@ -223,10 +221,10 @@ start)
 
 ;;
 stop)
-	PARENT_PID=`$PGREP -f "$SERVER -env=$ENV start"`
+	PARENT_PID=`$PGREP -f "$SERVER $PORT -env=$ENV start"`
 	if [ -n "$PARENT_PID" ] ; then #actually running the parent (parent=former instance of this script with the until loop)
 
-		$PGREP -f "$NODE $SERVER -env=$ENV" > $TMP_PID_FILE #children
+		$PGREP -f "$NODE $SERVER $PORT -env=$ENV" > $TMP_PID_FILE #children
 		echo "Attempting to stop $SERVER";
 		echo "Killing parent $PARENT_PID";
 		echo "Killing parent $PARENT_PID" >> $OUTPUT;
@@ -244,7 +242,7 @@ stop)
 
 	#straggler, i.e. a node server that has broken away from the parent bash loop and needs to be stopped
 	#might exist after parent bash loop is killed
-	STRAGGLER_PID=`$PGREP -f "$SERVER -env=$ENV"`
+	STRAGGLER_PID=`$PGREP -f "$SERVER $PORT -env=$ENV"`
 	if [ -n "$STRAGGLER_PID" ]; then #straggler PID exists
 		kill -TERM $STRAGGLER_PID;
         echo_success;
@@ -254,8 +252,8 @@ stop)
     echo_success;
 ;;
 restart)
-	$0 $1 -env=$ENV stop;
-	$0 $1 -env=$ENV start;
+	$0 $1 $PORT -env=$ENV stop;
+	$0 $1 $PORT -env=$ENV start;
 ;;
 *)
 	usage;
