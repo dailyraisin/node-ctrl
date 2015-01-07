@@ -175,7 +175,7 @@ start)
 	{
         #following echoes are logged
 		THIS_INSTANCE=$$
-		$PGREP -f "$SERVER $PORT -env=$ENV start" > $TMP_PID_FILE
+		$PGREP -f "$SERVER $PORT $ENV start" > $TMP_PID_FILE
 
 		for POSSIBLE_PID in `cat $TMP_PID_FILE`; do
 			if [ "$THIS_INSTANCE" -ne "$POSSIBLE_PID" ] ; then #inner shell‘s id is not one found
@@ -234,9 +234,8 @@ start)
 
 ;;
 stop)
-	PARENT_PID=`$PGREP -f "$SERVER $PORT -env=$ENV start"`
+	PARENT_PID=`$PGREP -f "$SERVER $PORT $ENV start"`
 	if [ -n "$PARENT_PID" ] ; then #actually running the parent (parent=former instance of this script with the until loop)
-
 		$PGREP -f "$NODE $SERVER $PORT -env=$ENV" > $TMP_PID_FILE #children
 		echo "Attempting to stop $SERVER";
 		echo "Killing parent $PARENT_PID";
@@ -255,6 +254,7 @@ stop)
 
 	#straggler, i.e. a node server that has broken away from the parent bash loop and needs to be stopped
 	#might exist after parent bash loop is killed
+    #note: has -env=
 	STRAGGLER_PID=`$PGREP -f "$SERVER $PORT -env=$ENV"`
 	if [ -n "$STRAGGLER_PID" ]; then #straggler PID exists
 		kill -TERM $STRAGGLER_PID;
