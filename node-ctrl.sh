@@ -48,6 +48,19 @@ ENV=$3
 #action is start, stop, or restart
 ACTION=$4
 
+case "$ENV" in
+production)
+    #okay
+;;
+development)
+    #okay
+;;
+*)
+    #not okay, usage message
+	usage;
+    exit 1
+esac
+
 ME=`basename $1`
 THIS_PATH="`dirname \"$0\"`" # relative
 THIS_PATH="`( cd \"$THIS_PATH\" && pwd )`" #normalized
