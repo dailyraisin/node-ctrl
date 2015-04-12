@@ -9,7 +9,7 @@ PAUSE=5
 
 #functions
 usage() {
-	echo "usage: $ME {app.js} {port} {env} {start|stop|restart} [--debug]";
+    echo "usage: $ME {app.js} {port} {env} {start|stop|restart} [--debug]";
 }
 
 echo_success() {
@@ -57,7 +57,7 @@ development)
 ;;
 *)
     #not okay, usage message
-	usage;
+    usage;
     exit 1
 esac
 
@@ -66,7 +66,7 @@ THIS_PATH="`dirname \"$0\"`" # relative
 THIS_PATH="`( cd \"$THIS_PATH\" && pwd )`" #normalized
 
 # get optional --debug as fourth argument, if it’s set then $DO_DEBUG == true
-argc="$@ flubber"
+argc="$@ --"
 x=0
 # x=0 for unset variable
 for arg in $argc
@@ -91,61 +91,61 @@ SETCOLOR_NORMAL="echo -en \\033[0;39m"
 # if tmp not available, log to this directory
 TMP_PID_FILE="/var/tmp/${ME}-${ENV}-${PORT}.pids"
 if [ -a "$TMP_PID_FILE" ]; then  #if exists
-	if [ ! -w "$TMP_PID_FILE" ]; then #if not writable
-		echo "Cannot write .pids to /var/tmp, !-w";
-		echo "Try it with sudo!";
+    if [ ! -w "$TMP_PID_FILE" ]; then #if not writable
+        echo "Cannot write .pids to /var/tmp, !-w";
+        echo "Try it with sudo!";
         echo_failure;
-		exit 1;
-	fi;
+        exit 1;
+    fi;
 else #doesn't exist
-	if [ ! -w "/var/tmp/" ]; then #cannot write to directory
-		echo "Cannot write .pids to /var/tmp";
-		echo "Try it with sudo!";
+    if [ ! -w "/var/tmp/" ]; then #cannot write to directory
+        echo "Cannot write .pids to /var/tmp";
+        echo "Try it with sudo!";
         echo_failure;
-		exit 1;
-	fi;
+        exit 1;
+    fi;
 fi;
 
 TMP_QUIT_FILE="/var/tmp/${ME}-${ENV}-${PORT}.quit"
 if [ -a "$TMP_QUIT_FILE" ]; then  #if exists
-	if [ ! -w "$TMP_QUIT_FILE" ]; then #if not writable
-		echo "Cannot possibly write .quit to /var/tmp, !-w";
-		echo "Try it with sudo!";
+    if [ ! -w "$TMP_QUIT_FILE" ]; then #if not writable
+        echo "Cannot possibly write .quit to /var/tmp, !-w";
+        echo "Try it with sudo!";
         echo_failure;
-		exit 1;
+        exit 1;
     else
         #remove it, it's not supposed to be there on startup!
         rm $TMP_QUIT_FILE;
-	fi;
+    fi;
 else #doesn't exist
-	if [ ! -w "/var/tmp/" ]; then #cannot write to directory
-		echo "Cannot possibly write .quit to /var/tmp";
-		echo "Try it with sudo!";
+    if [ ! -w "/var/tmp/" ]; then #cannot write to directory
+        echo "Cannot possibly write .quit to /var/tmp";
+        echo "Try it with sudo!";
         echo_failure;
-		exit 1;
-	fi;
+        exit 1;
+    fi;
     #doesn't exist and I can write to /var/tmp, cool, proceed! normal operation
 fi;
 
 
 OUTPUT="/var/tmp/${ME}-${ENV}-${PORT}.out"
 if [ -a "$OUTPUT" ]; then  #if exists
-	if [ ! -w "$OUTPUT" ]; then #if not writable
-		echo "Cannot write .out to /var/tmp, !-w";
-		echo "Try it with sudo!";
+    if [ ! -w "$OUTPUT" ]; then #if not writable
+        echo "Cannot write .out to /var/tmp, !-w";
+        echo "Try it with sudo!";
         echo_failure;
-		exit 1;
-	fi;
+        exit 1;
+    fi;
 fi;
 
 if [ ! -r $SERVER ]; then #cannot find node app to run
-	echo "Cannot find node server to run. Check the path to $SERVER";
+    echo "Cannot find node server to run. Check the path to $SERVER";
     echo_failure;
-	exit 1;
+    exit 1;
 fi;
 
 if [ -r $OUTPUT ]; then
-	chown $(whoami) $OUTPUT
+    chown $(whoami) $OUTPUT
 fi;
 
 # find necessary commands
@@ -164,21 +164,21 @@ fi;
 PGREP=`command -v pgrep`
 EXIT=$?
 if [ $EXIT -ne 0 ]; then
-	echo "node-ctrl: Cannot find pgrep $EXIT" >> $OUTPUT;
+    echo "node-ctrl: Cannot find pgrep $EXIT" >> $OUTPUT;
     echo_failure;
-	exit 1;
+    exit 1;
 fi;
 
 # start, stop, restart actions
 case $ACTION in
 start)
-	{
+    {
         #following echoes are logged
-		THIS_INSTANCE=$$
-		$PGREP -f "$SERVER $PORT $ENV start" > $TMP_PID_FILE
+        THIS_INSTANCE=$$
+        $PGREP -f "$SERVER $PORT $ENV start" > $TMP_PID_FILE
 
-		for POSSIBLE_PID in `cat $TMP_PID_FILE`; do
-			if [ "$THIS_INSTANCE" -ne "$POSSIBLE_PID" ] ; then #inner shell‘s id is not one found
+        for POSSIBLE_PID in `cat $TMP_PID_FILE`; do
+            if [ "$THIS_INSTANCE" -ne "$POSSIBLE_PID" ] ; then #inner shell‘s id is not one found
                 if [ "$PPID" -ne "$POSSIBLE_PID" ] ; then #parent pid is not one found (happens when bash -c "" remote commanding)
                     # if /proc/POSSIBLE_PID/stat exists
                     if [ -e "/proc/$POSSIBLE_PID/stat" ]; then
@@ -197,10 +197,10 @@ start)
                         touch $TMP_QUIT_FILE; #use file to communicate this to outer shell
                     fi;
                 fi;
-			fi;
-		done
-		rm $TMP_PID_FILE;
-	} 2>&1 | logger
+            fi;
+        done
+        rm $TMP_PID_FILE;
+    } 2>&1 | logger
 
     #this shell knows about the possible error above from the existance of the file
     if [ -a "$TMP_QUIT_FILE" ]; then  #if exists
@@ -234,43 +234,43 @@ start)
 
 ;;
 stop)
-	PARENT_PID=`$PGREP -f "$SERVER $PORT $ENV start"`
-	if [ -n "$PARENT_PID" ] ; then #actually running the parent (parent=former instance of this script with the until loop)
-		$PGREP -f "$NODE $SERVER $PORT -env=$ENV" > $TMP_PID_FILE #children
-		echo "Attempting to stop $SERVER";
-		echo "Killing parent $PARENT_PID";
-		echo "Killing parent $PARENT_PID" >> $OUTPUT;
-		kill -TERM $PARENT_PID; #kill parent first so it doesn't respawn the child
+    PARENT_PID=`$PGREP -f "$SERVER $PORT $ENV start"`
+    if [ -n "$PARENT_PID" ] ; then #actually running the parent (parent=former instance of this script with the until loop)
+        $PGREP -f "$NODE $SERVER $PORT -env=$ENV" > $TMP_PID_FILE #children
+        echo "Attempting to stop $SERVER";
+        echo "Killing parent $PARENT_PID";
+        echo "Killing parent $PARENT_PID" >> $OUTPUT;
+        kill -TERM $PARENT_PID; #kill parent first so it doesn't respawn the child
 
-		for CHILD_PID in `cat $TMP_PID_FILE`; do
-			echo "Killing child $CHILD_PID";
-			echo "Killing child $CHILD_PID" >> $OUTPUT;
-			kill -TERM $CHILD_PID;
-		done
-		rm $TMP_PID_FILE;
-	else
-		echo "No parent bash loop running.";
-	fi;
+        for CHILD_PID in `cat $TMP_PID_FILE`; do
+            echo "Killing child $CHILD_PID";
+            echo "Killing child $CHILD_PID" >> $OUTPUT;
+            kill -TERM $CHILD_PID;
+        done
+        rm $TMP_PID_FILE;
+    else
+        echo "No parent bash loop running.";
+    fi;
 
-	#straggler, i.e. a node server that has broken away from the parent bash loop and needs to be stopped
-	#might exist after parent bash loop is killed
+    #straggler, i.e. a node server that has broken away from the parent bash loop and needs to be stopped
+    #might exist after parent bash loop is killed
     #note: has -env=
-	STRAGGLER_PID=`$PGREP -f "$SERVER $PORT -env=$ENV"`
-	if [ -n "$STRAGGLER_PID" ]; then #straggler PID exists
-		kill -TERM $STRAGGLER_PID;
+    STRAGGLER_PID=`$PGREP -f "$SERVER $PORT -env=$ENV"`
+    if [ -n "$STRAGGLER_PID" ]; then #straggler PID exists
+        kill -TERM $STRAGGLER_PID;
         echo_success;
-	else
-		echo "No lingering node server running.";
-	fi;
+    else
+        echo "No lingering node server running.";
+    fi;
     echo_success;
 ;;
 restart)
-	$0 $1 $PORT -env=$ENV stop;
-	$0 $1 $PORT -env=$ENV start;
+    $0 $1 $PORT -env=$ENV stop;
+    $0 $1 $PORT -env=$ENV start;
 ;;
 *)
-	usage;
-	exit 1;
+    usage;
+    exit 1;
 ;;
 esac
 exit 0;
